@@ -1,20 +1,26 @@
 # src/inventory_manager.py
 
 class InventoryManager:
-    def __init__(self, inventory):
+    def __init__(self, inventory, api_client):
         self.inventory = inventory
+        self.api_client = api_client
 
-    def is_product_in_stock(self, product_id):
+    def check_stock(self, product_id):
         """
-        Mengecek apakah produk tersedia di stok.
+        Mengecek stok produk.
         """
-        return self.inventory.get(product_id, {}).get('stock', 0) > 0
+        return self.inventory.get(product_id, {}).get('stock', 0)
 
-    def update_stock(self, product_id, quantity):
+    def is_restock_needed(self, product_id, reorder_threshold=5):
         """
-        Memperbarui stok setelah transaksi.
+        Mengecek apakah produk perlu restock berdasarkan threshold.
         """
-        if self.is_product_in_stock(product_id):
-            self.inventory[product_id]['stock'] -= quantity
-            return True
-        return False
+        stock = self.check_stock(product_id)
+        return stock <= reorder_threshold
+
+    def update_stock_and_sync(self, product_id, new_stock):
+        """
+        Perbarui stok secara lokal dan sinkronkan dengan API eksternal dummy.
+        """
+        self.inventory[product_id]['stock'] = new_stock
+        return self.api_client.update_inventory(product_id, new_stock)
